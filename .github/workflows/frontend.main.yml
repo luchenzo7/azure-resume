@@ -1,25 +1,43 @@
-name: deploy_frontend
-# Deploys when push is made from your frontend folder
+name: Build and Deploy Static Website
+
 on:
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
       - "frontend/**"
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      - name: Upload to blob storage
-        uses: azure/CLI@v1
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
         with:
-          inlineScript: |
-            az storage blob upload-batch --account-name azureresumestorage8 -d '$web' -s frontend/ --overwrite
+          node-version: "14"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build the website
+        run: npm run build
+
+      - name: Log in to Azure CLI using Service Principal
+        env:
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+        run: |
+          echo $AZURE_CREDENTIALS > azure_credentials.json
+          az login --service-principal --username $(jq -r .clientId azure_credentials.json) --password $(jq -r .clientSecret azure_credentials.json) --tenant $(jq -r .tenantId azure_credentials.json)
+
+      - name: Upload to Azure Storage
+        env:
+          AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
+        run: |
+          az storage blob upload-batch --account-name $AZURE_STORAGE_ACCOUNT --destination \$web --source frontend/ --overwrite
+
       - name: Purge CDN endpoint
         uses: azure/CLI@v1
         with:
