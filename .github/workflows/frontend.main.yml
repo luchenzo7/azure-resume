@@ -1,14 +1,13 @@
-name: Build and Deploy Static Website
+name: deploy_frontend
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - "frontend/**"
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
