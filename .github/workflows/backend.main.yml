@@ -19,12 +19,9 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Log in to Azure CLI using Service Principal
-        env:
-          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
-        run: |
-          echo $AZURE_CREDENTIALS > azure_credentials.json
-          az login --service-principal --username $(jq -r .clientId azure_credentials.json) --password $(jq -r .clientSecret azure_credentials.json) --tenant $(jq -r .tenantId azure_credentials.json)
-
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Setup DotNet ${{ env.DOTNET_VERSION }} Environment
         uses: actions/setup-dotnet@v3
         with:
